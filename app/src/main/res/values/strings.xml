@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Weather forecast</string>
+    <string name="logo">Погода в вашем городе</string>
+    <string name="hintuser">Введите город</string>
+    <string name="didi">Узнать погоду</string>
+    <string name="reks">Введите текст</string>
+</resources>
