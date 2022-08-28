@@ -1,5 +1,6 @@
- package com.example.weatherforecast;
+package com.example.weatherforecast;
 
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
@@ -24,117 +25,115 @@ import java.net.URL;
 
 import kotlin.text.UStringsKt;
 
- public class MainActivity extends AppCompatActivity {
-     private EditText didi;
-   private Button main_btn;
-         private TextView rezyltat;
-     private View user_field;
-     private Object e;
+public class MainActivity extends AppCompatActivity {
 
-     @SuppressLint({"SetTextI18n", "MissingSuperCall"})
-     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-    user_field = findViewById(R.id.didi);
-    main_btn= findViewById(R.id.main_btn);
-    rezyltat = findViewById(R.id.rezyltat);
-    main_btn.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            if(user_field.getRootView().toString().trim().equals(""))
-                Toast.makeText(MainActivity.this, R.string.reks,Toast.LENGTH_LONG).show();
-      else {
-          String city = user_field.getRootView().toString();
-          String key ="8824e6efaad13bf422295d83f0d492b3";
-         String url = "https://api.openweathermap.org/data/2.5/weather?q= + city + &appid= + key + 8824e6efaad13bf422295d83f0d492b3&units=metric&lang=ru}";
-       new GetURLData().execute(url);
-        }
-    });
+	// Поля, что будут ссылаться на объекты из дизайна
+	private EditText user_field;
+	private Button main_btn;
+	private TextView result_info;
 
+	@Override
+	protected void onCreate(Bundle savedInstanceState) { // Сработает при создании Activity
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
 
+		// Устанавливаем ссылки на объекты из дизайна
+		user_field = findViewById(R.id.didi);
+		main_btn = findViewById(R.id.main_btn);
+		result_info = findViewById(R.id.rezyltat);
 
-    };
-    private class GetURLData extends AsyncTask<String, String, String> {
-   protected void onPreExecute() {
-        super.onPreExecute ();
-        rezyltat.setText("Ожидайте...");
+		// Обработчик нажатия на кнопку
+		main_btn.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				// Если ничего не ввели в поле, то выдаем всплывающую подсказку
+				if(user_field.getText().toString().trim().equals(""))
+					Toast.makeText(MainActivity.this, R.string.reks, Toast.LENGTH_LONG).show();
+				else {
+					// Если ввели, то формируем ссылку для получения погоды
+					String city = user_field.getText().toString();
+					String key = "9c43ae3ae6b1666874d41a33e743e8fe";
+					String url = "https://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + key + "&units=metric&lang=ru";
 
-    }
+					Log.e("URL", url);
+					// Запускаем класс для получения погоды
+					new GetURLData().execute(url);
+				}
+			}
+		});
+	}
 
+	@SuppressLint("StaticFieldLeak")
+	private class GetURLData extends AsyncTask<String, String, String> {
 
-    @Override
+		// Будет выполнено до отправки данных по URL
+		protected void onPreExecute() {
+			super.onPreExecute();
+			result_info.setText("Ожидайте...");
+		}
 
-    protected String doInBackGround (String...String) strings {
-          {
-    HttpURLConnection connection = null;
-    BufferedReader reader = null;
+		// Будет выполняться во время подключения по URL
+		@Override
+		protected String doInBackground(String... strings) {
+			HttpURLConnection connection = null;
+			BufferedReader reader = null;
 
-             try {
-                 URL url = new URL(strings[0]);
-           connection = (HttpURLConnection)url.openConnection();
-            connection.connect();
+			try {
+				// Создаем URL подключение, а также HTTP подключение
+				URL url = new URL(strings[0]);
+				connection = (HttpURLConnection) url.openConnection();
+				connection.connect();
 
-                 InputStream stream = connection.getInputStream();
-             reader = new BufferedReader( new InputStreamReader(stream));
+				// Создаем объекты для считывания данных из файла
+				InputStream stream = connection.getInputStream();
+				reader = new BufferedReader(new InputStreamReader(stream));
 
-        StringBuffer buffer = new StringBuffer();
-         String line = "";
-while ((line = reader.readLine() ) != null)
-      buffer.append("\n");
-         return buffer.toString();
+				// Генерируемая строка
+				StringBuilder buffer = new StringBuilder();
+				String line = "";
 
-             } catch (MalformedURLException e) {
-                 e.printStackTrace();
-             } catch (IOException e) {
-                 e.printStackTrace();
-             } finally {
+				// Считываем файл и записываем все в строку
+				while((line = reader.readLine()) != null)
+					buffer.append(line).append("\n");
 
-                 if(connection != null)
-            connection.disconnect();
-         if(reader != null) {
-             try {
-                 reader.close();
-             } catch (IOException e) {
-                 e.printStackTrace();
-             }
-         }
-        return null;
+				// Возвращаем строку
+				return buffer.toString();
 
-         @Override
-         protected void onPostExecute(String Object result;
-                 result){
-      super.onPostResume(result);
-      try {
-          JSONObject jsonObject = new JSONObject(result);
-          rezyltat.setText("Температура: " +jsonObject.getJSONObject("main").getDouble("temp"));
-      } catch (IOException e) {
-          e.printStackTrace();
-      }
-      }
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				// Закрываем соединения
+				if(connection != null)
+					connection.disconnect();
 
+				try {
+					if (reader != null)
+						reader.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 
+			return null;
+		}
 
+		// Выполняется после завершения получения данных
+		@SuppressLint("SetTextI18n")
+		@Override
+		protected void onPostExecute(String result) {
+			super.onPostExecute(result);
 
+			// Конвертируем JSON формат и выводим данные в текстовом поле
+			try {
+				JSONObject jsonObject = new JSONObject(result);
+				result_info.setText("Температура: " + jsonObject.getJSONObject("main").getDouble("temp"));
+			} catch (Exception e) {
+				e.printStackTrace();
+				result_info.setText("Что-то пошло не так");
+			}
+		}
 
-
-
-
-             }
-
-
-
-
-         }
-
-
-        }
-
-     private class GetURLData {
-         public void execute(String url) {
-         }
-     }
- }
-
-     private class GetURLData {
-     }.
+	}
+}
